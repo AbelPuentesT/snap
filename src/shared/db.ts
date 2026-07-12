@@ -1,0 +1,47 @@
+import Database from 'better-sqlite3'
+import path from 'node:path'
+import fs from 'node:fs'
+import { config } from '../config.js'
+
+const DB_PATH = path.resolve(process.cwd(), 'data', config.dbName)
+
+let db: Database.Database | null = null
+
+export function getDb(): Database.Database {
+  if (!db) {
+    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
+    db = new Database(DB_PATH)
+    db.pragma('journal_mode = WAL')
+    db.pragma('foreign_keys = ON')
+  }
+  return db
+}
+
+export function initDb(): void {
+  const conn = getDb()
+  conn.exec(`
+    CREATE TABLE IF NOT EXISTS urls (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      short_code TEXT NOT NULL UNIQUE,
+      original_url TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `)
+
+  conn.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      name TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `)
+}
+
+export function closeDb(): void {
+  if (db) {
+    db.close()
+    db = null
+  }
+}
