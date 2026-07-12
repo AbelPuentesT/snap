@@ -3,15 +3,20 @@ import http from 'node:http'
 import { createApp } from '../src/server.js'
 import { initDb, closeDb } from '../src/shared/db.js'
 
+process.env['SNAP_DB_NAME'] = 'snap-test-urls.db'
 let server: http.Server
 let baseUrl: string
+let token: string
 
-beforeAll(() => {
+const testEmail = `urls-test-${Date.now()}@example.com`
+
+beforeAll(async () => {
   initDb()
 
   const app = createApp()
   server = http.createServer(app)
-  return new Promise<void>((resolve) => {
+
+  await new Promise<void>((resolve) => {
     server.listen(0, () => {
       const addr = server.address()
       if (addr && typeof addr === 'object') {
@@ -20,6 +25,14 @@ beforeAll(() => {
       resolve()
     })
   })
+
+  const res = await fetch(`${baseUrl}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: testEmail, password: 'secret123', name: 'URLs Tester' }),
+  })
+  const body = await res.json()
+  token = body.token
 })
 
 afterAll(() => {
@@ -27,11 +40,15 @@ afterAll(() => {
   closeDb()
 })
 
+function authHeaders(): Record<string, string> {
+  return { 'content-type': 'application/json', authorization: `Bearer ${token}` }
+}
+
 describe('POST /api/urls — crear URL corta', () => {
   it('crea una URL corta y devuelve 201', async () => {
     const res = await fetch(`${baseUrl}/api/urls`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ url: 'https://ejemplo.com/muy/larga' }),
     })
     expect(res.status).toBe(201)
@@ -45,7 +62,7 @@ describe('POST /api/urls — crear URL corta', () => {
   it('devuelve 400 si falta url', async () => {
     const res = await fetch(`${baseUrl}/api/urls`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({}),
     })
     expect(res.status).toBe(400)
@@ -61,7 +78,7 @@ describe('GET /api/urls — listar URLs', () => {
   beforeAll(async () => {
     const res = await fetch(`${baseUrl}/api/urls`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ url: 'https://ejemplo.com/lista' }),
     })
     const body = await res.json()
@@ -69,7 +86,9 @@ describe('GET /api/urls — listar URLs', () => {
   })
 
   it('devuelve lista con las URLs creadas', async () => {
-    const res = await fetch(`${baseUrl}/api/urls`)
+    const res = await fetch(`${baseUrl}/api/urls`, {
+      headers: { authorization: `Bearer ${token}` },
+    })
     expect(res.status).toBe(200)
 
     const body = await res.json()
@@ -89,7 +108,7 @@ describe('GET /:shortCode — redirección', () => {
   beforeAll(async () => {
     const res = await fetch(`${baseUrl}/api/urls`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ url: 'https://ejemplo.com/redirect-target' }),
     })
     const body = await res.json()

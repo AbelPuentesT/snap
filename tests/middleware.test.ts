@@ -31,7 +31,7 @@ describe('404 — rutas no encontradas', () => {
   })
 
   it('devuelve 404 incluso con métodos no GET', async () => {
-    const res = await fetch(`${baseUrl}/api/urls/999`, { method: 'PATCH' })
+    const res = await fetch(`${baseUrl}/api/nonexistent`, { method: 'PATCH' })
     expect(res.status).toBe(404)
   })
 })

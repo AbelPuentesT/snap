@@ -24,7 +24,8 @@ export function initDb(): void {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       short_code TEXT NOT NULL UNIQUE,
       original_url TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      user_id INTEGER REFERENCES users(id)
     )
   `)
 
@@ -37,6 +38,27 @@ export function initDb(): void {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `)
+
+  conn.exec(`
+    CREATE TABLE IF NOT EXISTS clicks (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      url_id      INTEGER NOT NULL REFERENCES urls(id) ON DELETE CASCADE,
+      clicked_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      ip_address  TEXT,
+      user_agent  TEXT,
+      referer     TEXT
+    )
+  `)
+
+  conn.exec(`CREATE INDEX IF NOT EXISTS idx_urls_user_id ON urls(user_id)`)
+  conn.exec(`CREATE INDEX IF NOT EXISTS idx_clicks_url_id ON clicks(url_id)`)
+  conn.exec(`CREATE INDEX IF NOT EXISTS idx_clicks_url_clicked ON clicks(url_id, clicked_at)`)
+
+  try {
+    conn.exec(`ALTER TABLE urls ADD COLUMN user_id INTEGER REFERENCES users(id)`)
+  } catch {
+    // ya existe — migración para bases creadas antes de este cambio
+  }
 }
 
 export function closeDb(): void {
