@@ -26,7 +26,7 @@ snap/
 │   └── modules/
 │       ├── urls/              # Acortar, listar, redirigir URLs
 │       ├── auth/              # Registro, login, JWT middleware
-│       └── dashboard/         # Placeholder
+│       └── dashboard/         # Dashboard con analíticas y rankings
 ├── tests/                     # Tests de integración HTTP real
 └── .env.example               # Plantilla de configuración
 ```
@@ -61,6 +61,11 @@ POST /api/auth/register   Registrar usuario        { email, password, name } →
 POST /api/auth/login      Iniciar sesión           { email, password } → { token, user }
 ```
 
+### Dashboard
+```
+GET /api/dashboard    Resumen + tendencias + rankings    Authorization: Bearer <token>
+```
+
 ### Middleware de autenticación
 ```
 Authorization: Bearer <token>
@@ -82,7 +87,7 @@ En producción, `PORT` y `JWT_SECRET` son obligatorios.
 
 ```bash
 npm test
-# 35 tests, 6 suites
+# 42 tests, 7 suites
 ```
 
 Los tests levantan un servidor HTTP real en puerto aleatorio y hacen peticiones con `fetch`.
