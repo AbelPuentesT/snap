@@ -83,14 +83,29 @@ Content-Type: application/json
 ```
 
 ```json
-{ "shortCode": "abc123", "originalUrl": "https://ejemplo.com/muy/larga" }
+{ "shortCode": "abc123", "originalUrl": "https://ejemplo.com/muy/larga", "expiresAt": null }
+```
+
+Con alias y TTL:
+
+```http
+POST /api/urls
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{ "url": "https://ejemplo.com/muy/larga", "alias": "mi-enlace", "ttl": 24 }
+```
+
+```json
+{ "shortCode": "mi-enlace", "originalUrl": "https://ejemplo.com/muy/larga", "expiresAt": "2026-07-14 17:00:00" }
 ```
 
 | Código | Motivo |
 |--------|--------|
 | 201 | URL creada exitosamente |
-| 400 | Falta `url` en el body |
+| 400 | Falta `url` en el body, o `alias` inválido (3-20 caracteres alfanuméricos) |
 | 401 | Token ausente o inválido |
+| 409 | `alias` ya está en uso |
 
 ### Listar URLs del usuario
 
@@ -101,7 +116,13 @@ Authorization: Bearer <token>
 
 ```json
 [
-  { "shortCode": "abc123", "originalUrl": "https://ejemplo.com/muy/larga", "createdAt": "2026-07-12 00:00:00" }
+  {
+    "shortCode": "abc123",
+    "originalUrl": "https://ejemplo.com/muy/larga",
+    "createdAt": "2026-07-12 00:00:00",
+    "expiresAt": null,
+    "expired": false
+  }
 ]
 ```
 
@@ -120,8 +141,10 @@ GET /:shortCode
 |--------|--------|
 | 302 | Redirección a la URL original |
 | 404 | `shortCode` no existe |
+| 410 | URL expirada |
 
-Cada visita registra automáticamente un click con `ip_address`, `user_agent` y `referer`.
+Cada visita registra automáticamente un click con `ip_address`, `user_agent` y `referer`.  
+Si la URL tiene `expires_at` y la fecha ya pasó, devuelve **410 Gone** y no registra el click.
 
 ---
 
@@ -168,6 +191,8 @@ Devuelve una vista completa de todas las URLs del usuario autenticado y su rendi
       "shortCode": "abc123",
       "originalUrl": "https://twitter.com/foo",
       "createdAt": "2026-07-01 10:00:00",
+      "expiresAt": null,
+      "expired": false,
       "clicks": 120
     }
   ]

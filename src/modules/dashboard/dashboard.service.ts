@@ -14,6 +14,8 @@ interface UrlEntry {
   shortCode: string
   originalUrl: string
   createdAt: string
+  expiresAt: string | null
+  expired: boolean
   clicks: number
 }
 
@@ -170,8 +172,9 @@ function getUrlList(
   db: ReturnType<typeof getDb>,
   userId: number,
 ): UrlEntry[] {
+  const now = new Date().toISOString()
   return (db.prepare(`
-    SELECT u.short_code, u.original_url, u.created_at, COUNT(c.id) AS clicks
+    SELECT u.short_code, u.original_url, u.created_at, u.expires_at, COUNT(c.id) AS clicks
     FROM urls u
     LEFT JOIN clicks c ON c.url_id = u.id
     WHERE u.user_id = ?
@@ -181,6 +184,8 @@ function getUrlList(
     shortCode: r['short_code'] as string,
     originalUrl: r['original_url'] as string,
     createdAt: r['created_at'] as string,
+    expiresAt: (r['expires_at'] as string) ?? null,
+    expired: r['expires_at'] != null && (r['expires_at'] as string) <= now,
     clicks: r['clicks'] as number,
   }))
 }

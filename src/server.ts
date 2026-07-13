@@ -1,5 +1,10 @@
 import express, { type Express, type Request, type Response, type NextFunction } from 'express'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { urlsRouter, redirectUrl } from './modules/urls/urls.routes.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 import { authRouter } from './modules/auth/auth.routes.js'
 import { dashboardRouter } from './modules/dashboard/dashboard.routes.js'
 
@@ -41,6 +46,12 @@ export function createApp(onBeforeFinal?: (app: Express) => void): Express {
   app.use('/api/dashboard', dashboardRouter)
 
   onBeforeFinal?.(app)
+
+  const clientDist = path.resolve(__dirname, '..', 'client', 'dist')
+  app.use(express.static(clientDist))
+  app.get(['/login', '/register'], (_req, res) => {
+    res.sendFile(path.resolve(clientDist, 'index.html'))
+  })
 
   app.get('/:shortCode', redirectUrl)
 

@@ -57,7 +57,12 @@ export function initDb(): void {
   try {
     conn.exec(`ALTER TABLE urls ADD COLUMN user_id INTEGER REFERENCES users(id)`)
   } catch {
-    // ya existe — migración para bases creadas antes de este cambio
+    // ya existe
+  }
+  try {
+    conn.exec(`ALTER TABLE urls ADD COLUMN expires_at TEXT`)
+  } catch {
+    // ya existe
   }
 }
 
