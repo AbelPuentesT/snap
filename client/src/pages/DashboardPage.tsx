@@ -3,62 +3,50 @@ import { getDashboard, type DashboardResponse } from '../api/dashboard'
 import { createUrl } from '../api/urls'
 import { ApiRequestError } from '../api/client'
 
-function Bar({ value, max, label }: { value: number; max: number; label: string }) {
-  const pct = max > 0 ? (value / max) * 100 : 0
+const BASE_URL = 'http://localhost:3000'
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function StatCard({ title, value }: { title: string; value: string | number }) {
   return (
-    <div style={{ marginBottom: 4 }}>
-      <div style={{ fontSize: '0.75rem', color: '#666' }}>{label}</div>
-      <div
-        style={{
-          height: 12,
-          background: '#eee',
-          borderRadius: 4,
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            width: `${pct}%`,
-            height: '100%',
-            background: '#4a90d9',
-            borderRadius: 4,
-            transition: 'width 0.3s',
-          }}
-        />
+    <div className="card" style={{ textAlign: 'center', flex: 1 }}>
+      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
+        {title}
       </div>
-      <div style={{ fontSize: '0.7rem', color: '#999', textAlign: 'right' }}>
+      <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em' }}>
         {value}
       </div>
     </div>
   )
 }
 
-function Card({ title, value }: { title: string; value: string | number }) {
+function Bar({ value, max, label }: { value: number; max: number; label: string }) {
+  const pct = max > 0 ? (value / max) * 100 : 0
   return (
-    <div
-      style={{
-        background: '#f9f9f9',
-        border: '1px solid #ddd',
-        borderRadius: 8,
-        padding: '1rem',
-        textAlign: 'center',
-        flex: 1,
-      }}
-    >
-      <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: 4 }}>
-        {title}
+    <div style={{ marginBottom: '0.6rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{label}</span>
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', fontVariantNumeric: 'tabular-nums' }}>{value}</span>
       </div>
-      <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{value}</div>
+      <div style={{ height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: 'var(--bar-fill)', borderRadius: 2, transition: 'width 0.4s ease' }} />
+      </div>
     </div>
   )
 }
 
-const inputStyle: React.CSSProperties = {
-  padding: '0.5rem',
-  border: '1px solid #ccc',
-  borderRadius: 4,
-  boxSizing: 'border-box',
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="card">
+      <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>
+        {title}
+      </h3>
+      {children}
+    </div>
+  )
 }
+
+// ── Page ────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardResponse | null>(null)
@@ -73,18 +61,18 @@ export default function DashboardPage() {
   const [createdShortCode, setCreatedShortCode] = useState('')
 
   useEffect(() => {
-    getDashboard()
-      .then(setData)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
+    load()
   }, [])
 
-  async function loadDashboard() {
+  async function load() {
+    setLoading(true)
     try {
-      const d = await getDashboard()
-      setData(d)
+      setData(await getDashboard())
+      setError('')
     } catch (err) {
       setError((err as Error).message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -100,7 +88,7 @@ export default function DashboardPage() {
       setAlias('')
       setTtl('')
       setCreatedShortCode(result.shortCode)
-      await loadDashboard()
+      await load()
     } catch (err) {
       if (err instanceof ApiRequestError) {
         setCreateError(err.message)
@@ -112,310 +100,241 @@ export default function DashboardPage() {
     }
   }
 
-  if (loading) return <p>Cargando dashboard…</p>
-  if (error)
-    return (
-      <div>
-        <p style={{ color: 'red' }}>{error}</p>
-        <button onClick={loadDashboard}>Reintentar</button>
-      </div>
-    )
+  function copyToClipboard(code: string) {
+    void navigator.clipboard.writeText(`${BASE_URL}/${code}`)
+  }
+
+  if (loading && !data) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+      Cargando…
+    </div>
+  )
+
+  if (error && !data) return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', minHeight: 300, justifyContent: 'center' }}>
+      <div className="alert-error">{error}</div>
+      <button className="btn-ghost" onClick={load}>Reintentar</button>
+    </div>
+  )
+
   if (!data) return null
 
-  const maxDailyClicks = Math.max(
-    1,
-    ...data.trends.clicksByDay.map((d) => d.clicks),
-  )
-  const maxHourlyClicks = Math.max(
-    1,
-    ...data.trends.peakHours.map((h) => h.clicks),
-  )
+  const maxDaily = Math.max(1, ...data.trends.clicksByDay.map(d => d.clicks))
+  const maxHourly = Math.max(1, ...data.trends.peakHours.map(h => h.clicks))
 
   return (
-    <div>
-      <h2>Dashboard</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      <div
-        style={{
-          display: 'flex',
-          gap: '1rem',
-          marginBottom: '2rem',
-        }}
-      >
-        <Card title="URLs creadas" value={data.summary.totalUrls} />
-        <Card title="Clicks totales" value={data.summary.totalClicks} />
-        <Card title="Últimos 7 días" value={data.summary.clicksLast7Days} />
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: '1rem' }}>
+        <StatCard title="URLs creadas" value={data.summary.totalUrls} />
+        <StatCard title="Clicks totales" value={data.summary.totalClicks} />
+        <StatCard title="Últimos 7 días" value={data.summary.clicksLast7Days} />
       </div>
 
-      <div
-        style={{
-          border: '1px solid #ddd',
-          borderRadius: 8,
-          padding: '1.5rem',
-          marginBottom: '2rem',
-        }}
-      >
-        <h3 style={{ marginTop: 0 }}>Crear URL corta</h3>
-        <form onSubmit={handleCreate}>
-          <div style={{ marginBottom: '0.75rem' }}>
+      {/* Create URL */}
+      <SectionCard title="Nueva URL corta">
+        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div className="field">
             <label htmlFor="url">URL original</label>
-            <br />
             <input
               id="url"
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               required
-              placeholder="https://ejemplo.com/muy/larga"
-              style={{ ...inputStyle, width: '100%' }}
+              placeholder="https://ejemplo.com/url/muy/larga"
             />
           </div>
-          <div style={{ marginBottom: '0.75rem' }}>
-            <label htmlFor="alias">
-              Alias{' '}
-              <span style={{ fontSize: '0.8rem', color: '#888' }}>
-                (opcional, 3-20 caracteres)
-              </span>
-            </label>
-            <br />
-            <input
-              id="alias"
-              type="text"
-              value={alias}
-              onChange={(e) => setAlias(e.target.value)}
-              placeholder="mi-enlace"
-              style={inputStyle}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.85rem' }}>
+            <div className="field">
+              <label htmlFor="alias">
+                Alias{' '}
+                <span style={{ color: 'var(--text-subtle)', fontWeight: 400 }}>(opcional, 3-20 chars)</span>
+              </label>
+              <input
+                id="alias"
+                type="text"
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                placeholder="mi-enlace"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="ttl">
+                TTL{' '}
+                <span style={{ color: 'var(--text-subtle)', fontWeight: 400 }}>(horas)</span>
+              </label>
+              <input
+                id="ttl"
+                type="number"
+                min="1"
+                value={ttl}
+                onChange={(e) => setTtl(e.target.value)}
+                placeholder="∞"
+                style={{ width: 90 }}
+              />
+            </div>
           </div>
-          <div style={{ marginBottom: '0.75rem' }}>
-            <label htmlFor="ttl">
-              TTL (horas){' '}
-              <span style={{ fontSize: '0.8rem', color: '#888' }}>
-                (vacío = sin expiración)
-              </span>
-            </label>
-            <br />
-            <input
-              id="ttl"
-              type="number"
-              min="1"
-              value={ttl}
-              onChange={(e) => setTtl(e.target.value)}
-              placeholder="24"
-              style={{ ...inputStyle, width: 120 }}
-            />
-          </div>
-          {createError && (
-            <p style={{ color: 'red', marginBottom: '0.5rem' }}>
-              {createError}
-            </p>
-          )}
-          {createdShortCode && (
-            <p style={{ color: 'green', marginBottom: '0.5rem' }}>
-              Creada: /{createdShortCode}
-            </p>
-          )}
-          <button type="submit" disabled={creating}>
-            {creating ? 'Creando…' : 'Crear URL corta'}
-          </button>
-        </form>
-      </div>
 
-      <div
-        style={{
-          border: '1px solid #ddd',
-          borderRadius: 8,
-          padding: '1.5rem',
-          marginBottom: '2rem',
-        }}
-      >
-        <h3 style={{ marginTop: 0 }}>Tus URLs</h3>
+          {createError && <div className="alert-error">{createError}</div>}
+
+          {createdShortCode && (
+            <div className="alert-success">
+              <span>✓ Creada:</span>
+              <a
+                href={`${BASE_URL}/${createdShortCode}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontWeight: 600, fontFamily: 'monospace', color: 'var(--success)' }}
+              >
+                {BASE_URL}/{createdShortCode}
+              </a>
+              <button
+                type="button"
+                className="btn-icon"
+                style={{ marginLeft: 'auto', color: 'var(--success)', borderColor: 'rgba(34,197,94,0.3)' }}
+                onClick={() => copyToClipboard(createdShortCode)}
+              >
+                Copiar
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={creating}
+              style={{ width: 'auto', minWidth: 140 }}
+            >
+              {creating ? 'Creando…' : 'Crear URL corta'}
+            </button>
+          </div>
+        </form>
+      </SectionCard>
+
+      {/* URL table */}
+      <SectionCard title={`Tus URLs${data.urls.length > 0 ? ` · ${data.urls.length}` : ''}`}>
         {data.urls.length === 0 ? (
-          <p style={{ color: '#888' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
             Todavía no creaste ninguna URL corta.
           </p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '2px solid #ddd' }}>
-                <th style={{ padding: '0.5rem' }}>Código</th>
-                <th style={{ padding: '0.5rem' }}>URL original</th>
-                <th style={{ padding: '0.5rem' }}>Creada</th>
-                <th style={{ padding: '0.5rem', textAlign: 'right' }}>
-                  Clicks
-                </th>
-                <th style={{ padding: '0.5rem' }}>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.urls.map((u) => (
-                <tr
-                  key={u.shortCode}
-                  style={{
-                    borderBottom: '1px solid #eee',
-                    opacity: u.expired ? 0.5 : 1,
-                  }}
-                >
-                  <td style={{ padding: '0.5rem' }}>
-                    <code>{u.shortCode}</code>
-                  </td>
-                  <td
-                    style={{
-                      padding: '0.5rem',
-                      maxWidth: 300,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      ...(u.expired ? { textDecoration: 'line-through', color: '#999' } : {}),
-                    }}
-                  >
-                    {u.originalUrl}
-                  </td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.85rem' }}>
-                    {u.createdAt}
-                  </td>
-                  <td
-                    style={{
-                      padding: '0.5rem',
-                      textAlign: 'right',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {u.clicks}
-                  </td>
-                  <td style={{ padding: '0.5rem' }}>
-                    {u.expired ? (
-                      <span
-                        style={{
-                          background: '#fcc',
-                          color: '#a00',
-                          fontSize: '0.75rem',
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        Expirada
-                      </span>
-                    ) : u.expiresAt ? (
-                      <span
-                        style={{
-                          background: '#efe',
-                          color: '#070',
-                          fontSize: '0.75rem',
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                        }}
-                      >
-                        {new Date(u.expiresAt).toLocaleString()}
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          color: '#888',
-                        }}
-                      >
-                        Sin expiración
-                      </span>
-                    )}
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Enlace corto</th>
+                  <th>URL original</th>
+                  <th>Creada</th>
+                  <th style={{ textAlign: 'right' }}>Clicks</th>
+                  <th>Estado</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.urls.map((u) => (
+                  <tr key={u.shortCode} style={{ opacity: u.expired ? 0.45 : 1 }}>
+                    <td>
+                      <a
+                        href={`${BASE_URL}/${u.shortCode}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          fontFamily: 'monospace',
+                          fontSize: '0.85rem',
+                          color: u.expired ? 'var(--text-subtle)' : 'var(--text)',
+                          textDecoration: u.expired ? 'line-through' : 'underline',
+                          textUnderlineOffset: 3,
+                        }}
+                      >
+                        /{u.shortCode}
+                      </a>
+                    </td>
+                    <td style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                      {u.originalUrl}
+                    </td>
+                    <td style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      {u.createdAt.slice(0, 10)}
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      {u.clicks}
+                    </td>
+                    <td>
+                      {u.expired ? (
+                        <span className="badge badge-error">Expirada</span>
+                      ) : u.expiresAt ? (
+                        <span className="badge badge-success">
+                          {new Date(u.expiresAt + 'Z').toLocaleDateString()}
+                        </span>
+                      ) : (
+                        <span className="badge badge-muted">∞</span>
+                      )}
+                    </td>
+                    <td>
+                      <button
+                        className="btn-icon"
+                        onClick={() => copyToClipboard(u.shortCode)}
+                        title="Copiar enlace"
+                      >
+                        Copiar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
+      </SectionCard>
 
-      {data.rankings.topUrls.length > 0 && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '1rem',
-            marginBottom: '2rem',
-          }}
-        >
-          <div
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: 8,
-              padding: '1rem',
-            }}
-          >
-            <h4 style={{ marginTop: 0 }}>Top URLs</h4>
-            {data.rankings.topUrls.map((u, i) => (
-              <Bar
-                key={u.shortCode}
-                label={`#${i + 1} /${u.shortCode}`}
-                value={u.clicks}
-                max={data.rankings.topUrls[0].clicks}
-              />
-            ))}
-          </div>
-          <div
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: 8,
-              padding: '1rem',
-            }}
-          >
-            <h4 style={{ marginTop: 0 }}>Top referentes</h4>
-            {data.rankings.topReferrers.map((r) => (
-              <Bar
-                key={r.source}
-                label={r.source}
-                value={r.clicks}
-                max={data.rankings.topReferrers[0].clicks}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {data.trends.clicksByDay.length > 0 && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '1rem',
-            marginBottom: '2rem',
-          }}
-        >
-          <div
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: 8,
-              padding: '1rem',
-            }}
-          >
-            <h4 style={{ marginTop: 0 }}>Clicks por día (30d)</h4>
-            {data.trends.clicksByDay.map((d) => (
-              <Bar
-                key={d.date}
-                label={d.date}
-                value={d.clicks}
-                max={maxDailyClicks}
-              />
-            ))}
-          </div>
-          <div
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: 8,
-              padding: '1rem',
-            }}
-          >
-            <h4 style={{ marginTop: 0 }}>Horas pico</h4>
-            {data.trends.peakHours.map((h) => (
-              <Bar
-                key={h.hour}
-                label={`${String(h.hour).padStart(2, '0')}:00`}
-                value={h.clicks}
-                max={maxHourlyClicks}
-              />
-            ))}
-          </div>
+      {/* Charts grid */}
+      {(data.rankings.topUrls.length > 0 || data.trends.clicksByDay.length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          {data.rankings.topUrls.length > 0 && (
+            <SectionCard title="Top URLs">
+              {data.rankings.topUrls.map((u, i) => (
+                <Bar
+                  key={u.shortCode}
+                  label={`#${i + 1} /${u.shortCode}`}
+                  value={u.clicks}
+                  max={data.rankings.topUrls[0].clicks}
+                />
+              ))}
+            </SectionCard>
+          )}
+          {data.rankings.topReferrers.length > 0 && (
+            <SectionCard title="Top referentes">
+              {data.rankings.topReferrers.map((r) => (
+                <Bar
+                  key={r.source}
+                  label={r.source}
+                  value={r.clicks}
+                  max={data.rankings.topReferrers[0].clicks}
+                />
+              ))}
+            </SectionCard>
+          )}
+          {data.trends.clicksByDay.length > 0 && (
+            <SectionCard title="Clicks por día (30d)">
+              {data.trends.clicksByDay.map((d) => (
+                <Bar key={d.date} label={d.date} value={d.clicks} max={maxDaily} />
+              ))}
+            </SectionCard>
+          )}
+          {data.trends.peakHours.length > 0 && (
+            <SectionCard title="Horas pico">
+              {data.trends.peakHours.map((h) => (
+                <Bar
+                  key={h.hour}
+                  label={`${String(h.hour).padStart(2, '0')}:00`}
+                  value={h.clicks}
+                  max={maxHourly}
+                />
+              ))}
+            </SectionCard>
+          )}
         </div>
       )}
     </div>

@@ -3,18 +3,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { ApiRequestError } from '../api/client'
 
-const centerStyle: React.CSSProperties = {
-  maxWidth: 400,
-  margin: '4rem auto',
-  padding: '0 1rem',
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.5rem',
-  boxSizing: 'border-box',
-}
-
 export default function LoginPage() {
   const { login } = useAuth()
   const [email, setEmail] = useState('')
@@ -40,49 +28,61 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={centerStyle}>
-      <h1>Snap</h1>
-      <h2>Iniciar sesión</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="email">Email</label>
-          <br />
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={inputStyle}
-          />
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '2rem 1rem',
+    }}>
+      <div style={{ width: '100%', maxWidth: 360 }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
+            ⚡ Snap
+          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            Inicia sesión en tu cuenta
+          </p>
         </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="password">Contraseña</label>
-          <br />
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={inputStyle}
-          />
+
+        <div className="card" style={{ padding: '1.75rem' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="field">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="tu@email.com"
+                autoComplete="email"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="password">Contraseña</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+            </div>
+            {error && <div className="alert-error">{error}</div>}
+            <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '0.25rem' }}>
+              {loading ? 'Ingresando…' : 'Ingresar'}
+            </button>
+          </form>
         </div>
-        {error && (
-          <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>
-        )}
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ padding: '0.5rem 2rem' }}
-        >
-          {loading ? 'Ingresando…' : 'Ingresar'}
-        </button>
-      </form>
-      <p style={{ marginTop: '1rem' }}>
-        ¿No tenés cuenta?{' '}
-        <Link to="/register">Registrate</Link>
-      </p>
+
+        <p style={{ textAlign: 'center', marginTop: '1.25rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+          ¿No tenés cuenta?{' '}
+          <Link to="/register" style={{ color: 'var(--text)' }}>Registrate</Link>
+        </p>
+      </div>
     </div>
   )
 }
