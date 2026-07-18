@@ -21,6 +21,7 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   if (res.status === 401) {
     localStorage.removeItem('snap_token')
     localStorage.removeItem('snap_user')
+    window.location.hash = '/login'
   }
 
   if (!res.ok) {
