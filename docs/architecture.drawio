@@ -1,0 +1,150 @@
+<mxfile host="app.diagrams.net" agent="claude-code" version="24.7.0">
+  <diagram name="Snap - Arquitectura" id="snap-architecture">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1650" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===================== TITLES ===================== -->
+        <mxCell id="title_fe" value="FRONTEND — React SPA (client/, Vite :5173 dev)" style="text;html=1;fontSize=16;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="20" width="480" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="title_be" value="BACKEND — Express (src/, :3000)" style="text;html=1;fontSize=16;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="620" y="20" width="480" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="title_db" value="SQLite — data/&lt;SNAP_DB_NAME&gt;" style="text;html=1;fontSize=16;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="700" width="480" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== FRONTEND ===================== -->
+        <mxCell id="fe_login" value="LoginPage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="70" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_register" value="RegisterPage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="230" y="70" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_protected" value="ProtectedRoute&#10;(redirige a /login si no hay token)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="130" width="320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_dashboard" value="DashboardPage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="190" width="320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_useauth" value="useAuth() — AuthProvider&#10;localStorage: snap_token / snap_user" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="250" width="320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_apifiles" value="api/auth.ts · api/urls.ts · api/dashboard.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="310" width="320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_apiclient" value="api/client.ts → api&lt;T&gt;()&#10;agrega Authorization: Bearer &lt;token&gt;&#10;si 401 → limpia localStorage + #/login" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="370" width="320" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== BACKEND ===================== -->
+        <mxCell id="be_server" value="server.ts → createApp()&#10;requestLogger + express.json()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="620" y="70" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="be_auth" value="authRouter → auth.routes.ts&#10;auth.service.ts (bcrypt hash + jwt.sign, 24h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="620" y="150" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="be_authenticate" value="authenticate — auth.middleware.ts&#10;verifica Bearer &lt;JWT&gt; → req.user = { sub, email }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="620" y="220" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="be_urls" value="urlsRouter → urls.routes.ts&#10;createUrl / listUrls (user-scoped) / redirectUrl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="620" y="290" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="be_dashboard" value="dashboardRouter → dashboard.service.ts&#10;agregados SQL: summary / trends / rankings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="620" y="360" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="be_catchall" value="GET /:shortCode (público, catch-all)&#10;redirectUrl — 404 / 410 / INSERT click / 302" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="620" y="430" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="be_config" value="config.ts — PORT, JWT_SECRET, SNAP_DB_NAME, NODE_ENV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="620" y="500" width="480" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== DB ===================== -->
+        <mxCell id="db_users" value="users&#10;(id, email, password_hash, name)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="740" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="db_urls" value="urls&#10;(short_code, original_url, user_id, expires_at)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="320" y="740" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="db_clicks" value="clicks&#10;(url_id, ip_address, user_agent, referer, clicked_at)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="580" y="740" width="260" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== EDGES: FRONTEND internal ===================== -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="fe_login" target="fe_useauth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="fe_register" target="fe_useauth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="envuelve" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="fe_protected" target="fe_dashboard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="fe_useauth" target="fe_apifiles">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="fe_dashboard" target="fe_apifiles">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="fe_apifiles" target="fe_apiclient">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== EDGE: FRONTEND -> BACKEND ===================== -->
+        <mxCell id="e7" value="fetch /api/* (Bearer token)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#b85450;fontColor=#b85450;fontStyle=1;" edge="1" parent="1" source="fe_apiclient" target="be_server">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== EDGES: BACKEND internal ===================== -->
+        <mxCell id="e8" value="/api/auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="be_server" target="be_auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="/api/urls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="be_server" target="be_urls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="/api/dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="be_server" target="be_dashboard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="GET /:shortCode" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="be_server" target="be_catchall">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="usa" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;" edge="1" parent="1" source="be_urls" target="be_authenticate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="usa" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;" edge="1" parent="1" source="be_dashboard" target="be_authenticate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" value="lee env" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;" edge="1" parent="1" source="be_auth" target="be_config">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="lee env" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;" edge="1" parent="1" source="be_authenticate" target="be_config">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== EDGES: BACKEND -> DB ===================== -->
+        <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82b366;" edge="1" parent="1" source="be_auth" target="db_users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82b366;" edge="1" parent="1" source="be_urls" target="db_urls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82b366;" edge="1" parent="1" source="be_dashboard" target="db_urls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82b366;" edge="1" parent="1" source="be_dashboard" target="db_clicks">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" value="SELECT" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82b366;" edge="1" parent="1" source="be_catchall" target="db_urls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" value="INSERT click" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82b366;" edge="1" parent="1" source="be_catchall" target="db_clicks">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

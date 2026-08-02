@@ -11,6 +11,55 @@ URL shortener with click analytics, expiration (TTL), and a React dashboard.
 
 ---
 
+## Architecture
+
+> Editable version (draw.io): [`docs/architecture.drawio`](docs/architecture.drawio) — open it at [app.diagrams.net](https://app.diagrams.net) or with the [draw.io VS Code extension](https://marketplace.visualstudio.com/items?itemName=hediet.vscode-drawio).
+
+```mermaid
+flowchart TB
+    subgraph FE["Frontend — React SPA (client/, :5173 dev)"]
+        direction TB
+        Pages["LoginPage / RegisterPage / DashboardPage\n(HashRouter + ProtectedRoute)"]
+        Auth["useAuth() — AuthProvider\nlocalStorage: snap_token / snap_user"]
+        ApiFiles["api/auth.ts · api/urls.ts · api/dashboard.ts"]
+        ApiClient["api/client.ts → api&lt;T&gt;()\nBearer token · 401 → clear + #/login"]
+        Pages --> Auth --> ApiFiles --> ApiClient
+    end
+
+    subgraph BE["Backend — Express (src/, :3000)"]
+        direction TB
+        Server["server.ts → createApp()\nrequestLogger + express.json()"]
+        AuthR["authRouter → auth.service.ts\nbcrypt hash + jwt.sign (24h)"]
+        Authenticate["authenticate middleware\nverifica Bearer JWT"]
+        UrlsR["urlsRouter → urls.routes.ts\ncreateUrl / listUrls / redirectUrl"]
+        DashR["dashboardRouter → dashboard.service.ts\nSQL: summary / trends / rankings"]
+        CatchAll["GET /:shortCode (público)\n404 / 410 / INSERT click / 302"]
+        Server --> AuthR
+        Server --> UrlsR
+        Server --> DashR
+        Server --> CatchAll
+        UrlsR -.usa.-> Authenticate
+        DashR -.usa.-> Authenticate
+    end
+
+    subgraph DB["SQLite — data/&lt;SNAP_DB_NAME&gt;"]
+        direction LR
+        Users[("users")]
+        Urls[("urls")]
+        Clicks[("clicks")]
+    end
+
+    ApiClient -- "fetch /api/*" --> Server
+    AuthR --> Users
+    UrlsR --> Urls
+    DashR --> Urls
+    DashR --> Clicks
+    CatchAll --> Urls
+    CatchAll --> Clicks
+```
+
+---
+
 ## Running in development
 
 Open **two terminals**:
